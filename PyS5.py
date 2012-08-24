@@ -9,8 +9,8 @@ class Slide(object):
 
     def __init__(self,title,content='',handout=''):
         self.title_ = title
-        self.content_ = content.replace('\n','<br>')
-        self.handout_ = handout.replace('\n','<br>')
+        self.content_ = content
+        self.handout_ = handout
         self.layer_ = 1
 
     def setTitle(self,title):
@@ -31,8 +31,8 @@ class Slide(object):
     def __repr__(self):
         retStr = '<div class="slide">\n'
         retStr += '<h1>'+self.title_+'</h1>\n'
-        retStr += '<div class="slidecontent">\n'+self.content_.replace('\n','<br>')+'\n</div>\n'
-        retStr += '<div class="handout">'+self.handout_.replace('\n','<br>')+'</div>\n'
+        retStr += '<div class="slidecontent">\n'+self.content_+'\n</div>\n'
+        retStr += '<div class="handout">\n'+self.handout_+'\n</div>\n'
         retStr += '</div>\n'
         return retStr
 
@@ -153,7 +153,7 @@ class Layout(object):
 class PPT(object):
     ''' the PPT class represents the whole presentation '''
 
-    def __init__(self,title,subtitle,author,datenow=str(datetime.date.today()),slides=[]):
+    def __init__(self,title,subtitle,author,occupation='',datenow=str(datetime.date.today()),slides=[]):
         ''' initialise the PPT class with title, author and optional parameter
             date and slides list
         '''
@@ -162,12 +162,13 @@ class PPT(object):
         self.title_ = title
         self.subtitle_ = subtitle
         self.author_ = author
+        self.occupation_ = occupation
         self.date_ = datenow
         self.version_ = 'S5 1.1'
         self.header_ = Head(self.title_,self.author_)
         self.layout_ = Layout()
         self.preface_ = Preface(self.title_,'right')
-        self.preface_.setContent('<div align="'+self.preface_.align_+'">\n<h1>'+self.title_+'</h1>\n<h2>'+self.subtitle_+'</h2>\n<h3>'+self.author_+'</h3>\n<h5>'+self.date_+'</h5>\n</div>')
+        self.preface_.setContent('<div align="'+self.preface_.align_+'">\n<h1>'+self.title_+'</h1>\n<h2>'+self.subtitle_+'</h2>\n<h3>'+self.author_+'</h3>\n<h4>'+self.occupation_+'</h4>\n<h5>'+self.date_+'</h5>\n</div>')
         self.slides_.append(self.preface_)
         self.slides_.extend(slides)
 
@@ -186,7 +187,11 @@ class PPT(object):
         self.num_ = len(self.slides_)
 
     def addSlides(self,slide):
-        self.slides_.append(slide)
+        if isinstance(slide,list):
+            self.slides_.extend(slide)
+        elif isinstance(slide,Slide):
+            self.slides_.append(slide)
+        self.num_ = len(self.slides_)
 
     def __repr__(self):
         retStr = str(self.header_)
@@ -199,9 +204,10 @@ class PPT(object):
 
 # test function
 def unitTest():
-    slide = Slide('test slide','<ol><li>test1</li><li>test2</li></ol>')
-    ppt = PPT('[test ppt]','[subtitle]','daniel',str(datetime.date.today()),[slide])
-    ppt.setTitle("")
+    ppt = PPT('[test ppt]','[subtitle]','Daniel','UOS')
+    slide1 = Slide('Structure','<ul>\n<li>test1</li>\n<li>test2</li>\n</ul>')
+    slide2 = Slide('First','<ul>\n<li>test1</li>\n<li>test2</li>\n</ul>')
+    ppt.addSlides([slide1,slide2])
     fout = open(r's5-blank\test.html','w')
     fout.write(str(ppt))
     fout.close()
