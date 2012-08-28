@@ -2,6 +2,7 @@
 
 from PyS5 import Slide, Head, Layout, PPT
 from Tkinter import *
+import tkMessageBox
 
 class App(object):
     ''' PyS5 designer class '''
@@ -13,7 +14,9 @@ class App(object):
         self.initMenus(master)
 
         self.btnGen = Button(self.frame,text="Generate",name="btnGen",fg="red",command=self.Generate)
-        self.btnGen.pack(side=LEFT)
+        self.btnGen.grid(row=0,column=2)
+
+        self.chgFlag = False
 
     def initMenus(self,master):
         self.menus = Menu(master)
@@ -26,7 +29,7 @@ class App(object):
         mnuFile.add_separator()
         mnuFile.add_command(label="Save",command=self.Save)
         mnuFile.add_separator()
-        mnuFile.add_command(label="Quit",command=self.frame.quit)
+        mnuFile.add_command(label="Quit",command=self.Quit)
         # edit
         mnuEdit = Menu(self.menus)
         self.menus.add_cascade(label="Edit",menu=mnuEdit)
@@ -45,9 +48,20 @@ class App(object):
 
     def Open(self):
         print 'Open menu item'
+        self.chgFlag = True
 
     def Save(self):
         print 'save'
+        self.chgFlag = False
+
+    def Quit(self):
+        if self.chgFlag:
+            if tkMessageBox.askyesno(
+            "Exit?",
+            "The current project is not saved.\nDo you want to EXIT?"):
+                self.frame.quit()
+        else:
+            self.frame.quit()
 
     def Help(self):
         print 'Help menu item'
@@ -62,7 +76,8 @@ class App(object):
         print 'del'
 
     def Generate(self):
-        print 'Hello'
+        print 'generate'
+
 
 # main entry
 root = Tk()
