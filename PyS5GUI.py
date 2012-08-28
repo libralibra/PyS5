@@ -8,12 +8,23 @@ import random
 # http://www.tutorialspoint.com/python/python_gui_programming.htm
 # http://www.pythonware.com/library/
 
+# version
+_version = 'v 0.0.1'
+
+# Change log:
+# v 0.0.1 - 28/08/2012
+#   - basic GUI: slides list, add/del/clear/prev/next buttons
+#   - menus
+
 class App(object):
     ''' PyS5 designer class '''
 
-    def __init__(self,master):
+    def __init__(self,master,title='PyS5 Designer'):
         self.frame = Frame(master)
         self.frame.pack()
+        self.master = master
+        self.version = _version
+        self.master.title(title+' '+_version)
 
         # menue
         self.initMenus(master)
@@ -25,9 +36,9 @@ class App(object):
         self.SlideScroll = Scrollbar(self.frame,orient=VERTICAL)
         self.slidesList = Listbox(self.frame,selectmode=SINGLE,yscrollcommand=self.SlideScroll.set)
         # double-click and change
-        # self.slidesList.bind("<Double-Button-1>", self.ShowSlide)
+        # self.slidesList.bind("<Double-Button-1>", )
         self.slidesList.grid(row=1,column=0,rowspan=5,columnspan=5,sticky=W+S+E+N)
-
+        
         self.btnPrev = Button(self.frame,text="Prev",name="btnPrev",command=self.Prev)
         self.btnPrev.grid(row=6,column=0, sticky=W)
         self.btnNext = Button(self.frame,text="Next",name="btnNext",command=self.Next)
@@ -87,9 +98,9 @@ class App(object):
             if tkMessageBox.askyesno(
             "Exit?",
             "The current project is not saved.\nDo you want to EXIT?"):
-                self.frame.quit()
+                self.master.destroy()
         else:
-            self.frame.quit()
+            self.master.destroy()
 
     def Help(self):
         print 'Help menu item'
@@ -119,6 +130,7 @@ class App(object):
         self.slidesList.select_clear(0,END)
         self.slidesList.select_set(END)
         self.slidesList.see(END) # make sure the given index can be seen
+        self.chgFlag = True
 
     def DelSlide(self):
         self.temp = [self.slidesList.get(0,END)[x] for x in range(self.slidesList.size()) if str(x) not in self.slidesList.curselection()]
@@ -130,10 +142,12 @@ class App(object):
         self.slidesList.select_clear(0,END)
         if len(self.slidesList.get(0,END))>0:
             self.slidesList.select_set(0)
+        self.chgFlag = True
 
     def Clear(self):
         self.slidesList.delete(0,END)
         self.curNum = -1
+        self.chgFlag = True
 
     def Generate(self):
         print 'generate'
