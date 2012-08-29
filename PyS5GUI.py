@@ -1,159 +1,157 @@
 #! /usr/bin/env python
 
 from PyS5 import Slide, Head, Layout, PPT
-from Tkinter import *
-import tkMessageBox
+import wx
 import random
 
-# http://www.tutorialspoint.com/python/python_gui_programming.htm
-# http://www.pythonware.com/library/
+# ++++++++++++++++++++++++++++++++++++
+# A GUI designer for PyS5 Application
+# Require:  wxPython, PyS5
+# Author:   libralibra
+# Email:    790404545#qq.com
+#           (replace # with @)
+# ++++++++++++++++++++++++++++++++++++
 
-# version
-_version = 'v 0.0.1'
+# documentations:
+# http://wxpython.org/
+# http://wiki.woodpecker.org.cn/moin/WxPythonInAction
 
-# Change log:
-# v 0.0.1 - 28/08/2012
-#   - basic GUI: slides list, add/del/clear/prev/next buttons
-#   - menus
+# major version number
+_version_ = '0.0.1'
 
-class App(object):
-    ''' PyS5 designer class '''
+# ChangeLog:
 
-    def __init__(self,master,title='PyS5 Designer'):
-        self.frame = Frame(master)
-        self.frame.pack()
-        self.master = master
-        self.version = _version
-        self.master.title(title+' '+_version)
 
-        # menue
-        self.initMenus(master)
+class PyS5Designer(wx.Frame):
+    """docstring for PyS5Designer"""
+    def __init__(self, parent, title="PyS5 Designer"):
+        self.frame_ = wx.Frame.__init__(self,parent,title=title+" v "+_version_,size=(400,300))
+        self.SetBackgroundColour('white')
+        self.Center(wx.BOTH)
+        self.CreateStatusBar()
+        self.title_ = title+" v "+_version_
+        self.num_ = 0
+        self.cur_ = 0
+        self.flag_ = False
 
-        # controls
-        self.lbl1 = Label(self.frame,text="Slides:")
-        self.lbl1.grid(row=0,column=0)
+        # set file menus
+        filemenu = wx.Menu()
+        menuOpen = filemenu.Append(wx.ID_OPEN,"&Open\tCtrl+O"," Open a saved project")
+        menuNew = filemenu.Append(wx.ID_NEW,"&New\tCtrl+N"," Create a new project")
+        filemenu.AppendSeparator()
+        menuSave = filemenu.Append(wx.ID_SAVE,"&Save\tCtrl+S"," Save the current presentation")
+        filemenu.AppendSeparator()
+        menuExit = filemenu.Append(wx.ID_EXIT,"&Quit\tCtrl+Q"," Exit PyS5Designer")
 
-        self.SlideScroll = Scrollbar(self.frame,orient=VERTICAL)
-        self.slidesList = Listbox(self.frame,selectmode=SINGLE,yscrollcommand=self.SlideScroll.set)
-        # double-click and change
-        # self.slidesList.bind("<Double-Button-1>", )
-        self.slidesList.grid(row=1,column=0,rowspan=5,columnspan=5,sticky=W+S+E+N)
-        
-        self.btnPrev = Button(self.frame,text="Prev",name="btnPrev",command=self.Prev)
-        self.btnPrev.grid(row=6,column=0, sticky=W)
-        self.btnNext = Button(self.frame,text="Next",name="btnNext",command=self.Next)
-        self.btnNext.grid(row=6,column=1, sticky=W)
-        self.btnAdd = Button(self.frame,text="Add",name="btnAdd",command=self.AddSlide)
-        self.btnAdd.grid(row=6,column=2, sticky=W)
-        self.btnDel = Button(self.frame,text="Del",name="btnDel",command=self.DelSlide)
-        self.btnDel.grid(row=6,column=3, sticky=W)
-        self.btnClear = Button(self.frame,text="Clear",name="btnClear",command=self.Clear)
-        self.btnClear.grid(row=6,column=4, sticky=W)
+        # set edit menus
+        editmenu = wx.Menu()
+        menuPrev = editmenu.Append(wx.ID_BACKWARD,"Previous slide\tCtrl+R"," Switch to previous slide")
+        menuNext = editmenu.Append(wx.ID_FORWARD,"Nex&t slide\tCtrl+T"," Switch to next slide")
+        editmenu.AppendSeparator()
+        menuAdd = editmenu.Append(wx.ID_ADD,"&Add slide\tCtrl+A"," Add a new slide")
+        menuDelete = editmenu.Append(wx.ID_DELETE,"&Delete slide\tCtrl+D"," Delete a slide")
+        menuClear = editmenu.Append(wx.ID_CLEAR,"Cl&ear\tCtrl+E"," Clear all slides")
 
-        self.btnGen = Button(self.frame,text="Generate",name="btnGen",fg="red",command=self.Generate)
-        self.btnGen.grid(row=0,column=5)
+        # set help menus
+        helpmenu = wx.Menu()
+        menuHelp = helpmenu.Append(wx.ID_HELP_CONTENTS,"&Content\tCtrl+H"," Help contents")
+        helpmenu.AppendSeparator()
+        menuAbout = helpmenu.Append(wx.ID_ABOUT,"A&bout\tCtrl+B"," About the application")
 
-        # data members
-        self.chgFlag = False
-        self.curNum = -1
+        # set the menubar
+        menubar = wx.MenuBar()
+        menubar.Append(filemenu,"&File")
+        menubar.Append(editmenu,"&Edit")
+        menubar.Append(helpmenu,"&Help")
+        self.SetMenuBar(menubar)
 
-    def initMenus(self,master):
-        self.menus = Menu(master)
-        master.config(menu=self.menus)
-        # file
-        mnuFile = Menu(self.menus)
-        self.menus.add_cascade(label="File",menu=mnuFile)
-        mnuFile.add_command(label="New",command=self.New)
-        mnuFile.add_command(label="Open",command=self.Open)
-        mnuFile.add_separator()
-        mnuFile.add_command(label="Save",command=self.Save)
-        mnuFile.add_separator()
-        mnuFile.add_command(label="Quit",command=self.Quit)
-        # edit
-        mnuEdit = Menu(self.menus)
-        self.menus.add_cascade(label="Edit",menu=mnuEdit)
-        mnuEdit.add_command(label="Add slide",command=self.AddSlide)
-        mnuEdit.add_command(label="Delete slide",command=self.DelSlide)
-        mnuEdit.add_separator()
-        mnuEdit.add_command(label="Generate S5 PPT",command=self.Generate)
-        # help
-        mnuHelp = Menu(self.menus)
-        self.menus.add_cascade(label="Help",menu=mnuHelp)
-        mnuHelp.add_command(label="Content",command=self.Help)
-        mnuHelp.add_command(label="About",command=self.About)
+        # set the sizer
+        self.grid = wx.GridBagSizer(hgap=5,vgap=5)
+        self.vsizer = wx.BoxSizer(wx.VERTICAL)
 
-    def New(self):
-        print 'New menu item'
+        # set the controls
+        self.hsizer0 = wx.BoxSizer(wx.HORIZONTAL)
+        self.label0 = wx.StaticText(self,label="Slides:",style=wx.ALIGN_LEFT)
+        self.label1 = wx.StaticText(self,label=str(self.cur_)+"/"+str(self.num_),style=wx.ALIGN_RIGHT)
+        self.hsizer0.Add(self.label0)
+        self.hsizer0.Add(self.label1)
+        self.grid.Add(self.hsizer0,pos=(0,0),span=(1,4))
+##        self.grid.Add(self.label0,pos=(0,0))
+##        self.grid.Add(self.label1,pos=(0,1))
 
-    def Open(self):
-        print 'Open menu item'
-        self.chgFlag = True
+        self.list_ = wx.ListBox(self,style=wx.LB_EXTENDED)
+        self.grid.Add(self.list_,pos=(1,0),span=(1,4))
 
-    def Save(self):
-        print 'save'
-        self.chgFlag = False
+        self.hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        self.btnPrev = wx.Button(self,wx.ID_ANY,"Prev")
+        self.btnNext = wx.Button(self,wx.ID_ANY,"Next")
+        self.btnAdd = wx.Button(self,wx.ID_ANY,"Add")
+        self.btnDelete = wx.Button(self,wx.ID_ANY,"Delete")
+        self.btnClear = wx.Button(self,wx.ID_ANY,"Clear")
+        self.grid.Add(self.btnPrev,pos=(2,0))
+        self.grid.Add(self.btnNext,pos=(2,1))
+        self.grid.Add(self.btnAdd,pos=(2,2))
+        self.grid.Add(self.btnDelete,pos=(2,3))
+        self.grid.Add(self.btnClear,pos=(2,4))
 
-    def Quit(self):
-        if self.chgFlag:
-            if tkMessageBox.askyesno(
-            "Exit?",
-            "The current project is not saved.\nDo you want to EXIT?"):
-                self.master.destroy()
-        else:
-            self.master.destroy()
+        # set the event binding
+        self.Bind(wx.EVT_MENU, self.OnOpen, menuOpen)
+        self.Bind(wx.EVT_MENU, self.OnNew, menuNew)
+        self.Bind(wx.EVT_MENU, self.OnSave, menuSave)
+        self.Bind(wx.EVT_MENU, self.OnPrev, menuPrev)
+        self.Bind(wx.EVT_MENU, self.OnNext, menuNext)
+        self.Bind(wx.EVT_MENU, self.OnAdd, menuAdd)
+        self.Bind(wx.EVT_MENU, self.OnDelete, menuDelete)
+        self.Bind(wx.EVT_MENU, self.OnClear, menuClear)
+        self.Bind(wx.EVT_MENU, self.OnHelp, menuHelp)
+        self.Bind(wx.EVT_MENU, self.OnAbout, menuAbout)
 
-    def Help(self):
-        print 'Help menu item'
+        # set the event for button
+        self.Bind(wx.EVT_BUTTON, self.OnPrev, self.btnPrev)
+        self.Bind(wx.EVT_BUTTON, self.OnNext, self.btnNext)
+        self.Bind(wx.EVT_BUTTON, self.OnAdd, self.btnAdd)
+        self.Bind(wx.EVT_BUTTON, self.OnDelete, self.btnDelete)
+        self.Bind(wx.EVT_BUTTON, self.OnClear, self.btnClear)
 
-    def About(self):
-        print 'About'
+        # show the frame
+        self.vsizer.Add(self.grid,0,wx.ALL,5)
+        self.SetSizer(self.vsizer)
+        #self.SetSizerAndFit(self.vsizer)
+        self.Show(True)
 
-    def Prev(self):
-        curind = self.slidesList.curselection()
-        if len(curind)>0:
-            curind = int(curind[0])
-            if curind>0:
-                self.slidesList.select_clear(0,END)
-                self.slidesList.select_set(curind-1)
+    def OnOpen(self,e):
+        dlg = wx.MessageDialog(self, " A sample editor \n in wxPython", "PyS5 Designer", wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
 
-    def Next(self):
-        curind = self.slidesList.curselection()
-        if len(curind)>0:
-            curind = int(curind[0])
-            if curind<self.slidesList.size()-1:
-                self.slidesList.select_clear(0,END)
-                self.slidesList.select_set(curind+1)
+    def OnNew(self,e):
+        pass
 
-    def AddSlide(self):
-        self.slidesList.insert(END,str(random.random()))
-        self.curNum += 1
-        self.slidesList.select_clear(0,END)
-        self.slidesList.select_set(END)
-        self.slidesList.see(END) # make sure the given index can be seen
-        self.chgFlag = True
+    def OnSave(self,e):
+        pass
 
-    def DelSlide(self):
-        self.temp = [self.slidesList.get(0,END)[x] for x in range(self.slidesList.size()) if str(x) not in self.slidesList.curselection()]
-        self.slidesList.delete(0,END)
-        self.curNum = -1
-        for item in self.temp:
-            self.slidesList.insert(END,item)
-            self.curNum += 1
-        self.slidesList.select_clear(0,END)
-        if len(self.slidesList.get(0,END))>0:
-            self.slidesList.select_set(0)
-        self.chgFlag = True
+    def OnPrev(self,e):
+        pass
 
-    def Clear(self):
-        self.slidesList.delete(0,END)
-        self.curNum = -1
-        self.chgFlag = True
+    def OnNext(self,e):
+        pass
 
-    def Generate(self):
-        print 'generate'
+    def OnAdd(self,e):
+        self.list_.Append(str(random.random()))
 
+    def OnDelete(self,e):
+        pass
+
+    def OnClear(self,e):
+        self.list_.Clear()
+
+    def OnHelp(self,e):
+        pass
+
+    def OnAbout(self,e):
+        pass
 
 # main entry
-root = Tk()
-app = App(root)
-root.mainloop()
+app = wx.App(False)
+mainFrame = PyS5Designer(None,"PyS5 Designer")
+app.MainLoop()
